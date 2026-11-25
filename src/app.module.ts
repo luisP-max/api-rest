@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProjectsModule } from './projects/projects.module.js';
+import { TasksModule } from './tasks/tasks.module.js';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         synchronize: true, 
       }),
     }),
+    ProjectsModule,
+    TasksModule,
   ],
   controllers: [],
   providers: [],
