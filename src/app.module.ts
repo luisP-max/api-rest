@@ -20,13 +20,15 @@ import { TasksModule } from './tasks/tasks.module.js';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
         autoLoadEntities: true,
-        synchronize: true, 
+        synchronize: true,
+        ssl:
+          configService.get<string>('DB_SSL') === 'true'
+            ? { rejectUnauthorized: false }
+            : false,
       }),
     }),
     ProjectsModule,
     TasksModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}
