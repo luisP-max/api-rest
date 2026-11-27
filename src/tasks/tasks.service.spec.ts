@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -81,6 +81,55 @@ describe('TasksService', () => {
     await expect(service.create(dto)).rejects.toThrow(BadRequestException);
   });
 
+  it('should filter tasks by status and priority', async () => {
+    const filteredTasks = [
+      { id: 1, status: TaskStatus.PENDING, priority: TaskPriority.HIGH },
+    ];
+    mockTaskRepository.find.mockResolvedValue(filteredTasks);
+
+    const result = await service.findAll({
+      status: TaskStatus.PENDING,
+      priority: TaskPriority.HIGH,
+    });
+
+    expect(result).toEqual(filteredTasks);
+    expect(mockTaskRepository.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          status: TaskStatus.PENDING,
+          priority: TaskPriority.HIGH,
+        },
+      }),
+    );
+  });
+
+  it('should find all tasks belonging to a specific project', async () => {
+    mockProjectsService.findOne.mockResolvedValue({ id: 1 });
+    const projectTasks = [{ id: 1, projectId: 1, title: 'Task 1' }];
+    mockTaskRepository.find.mockResolvedValue(projectTasks);
+
+    const result = await service.findByProject(1);
+    expect(result).toEqual(projectTasks);
+    expect(mockProjectsService.findOne).toHaveBeenCalledWith(1);
+  });
+
+  it('should return overdue incomplete tasks', async () => {
+    const overdueTasks = [
+      { id: 3, title: 'Overdue Task', status: TaskStatus.IN_PROGRESS },
+    ];
+    mockTaskRepository.find.mockResolvedValue(overdueTasks);
+
+    const result = await service.findOverdueTasks();
+    expect(result).toEqual(overdueTasks);
+    expect(mockTaskRepository.find).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw NotFoundException if task does not exist', async () => {
+    mockTaskRepository.findOne.mockResolvedValue(null);
+
+    await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
+  });
+
   it('should update task status successfully', async () => {
     const existingTask = { id: 1, title: 'Test', status: TaskStatus.PENDING };
     mockTaskRepository.findOne.mockResolvedValue(existingTask);
@@ -94,5 +143,14 @@ describe('TasksService', () => {
     });
 
     expect(result.status).toBe(TaskStatus.COMPLETED);
+  });
+
+  it('should delete a task successfully', async () => {
+    const existingTask = { id: 1, title: 'Task to delete' };
+    mockTaskRepository.findOne.mockResolvedValue(existingTask);
+    mockTaskRepository.remove.mockResolvedValue(existingTask);
+
+    const result = await service.remove(1);
+    expect(result.message).toContain('successfully deleted');
   });
 });
