@@ -18,7 +18,7 @@ async function bootstrap() {
   .setDescription('REST API for managing projects and their tasks')
   .setVersion('1.0')
   .build();
-
+  app.setGlobalPrefix('api/v1');
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
   
